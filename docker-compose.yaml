@@ -1,0 +1,30 @@
+version: '3.8'
+services:
+  # Spring Boot Application
+  tms:
+    container_name: tms_app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      # Define environment variables for your Spring Boot application if needed
+      POSTGRES_URL: jdbc:postgresql://postgres_tms:5432/tms
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: password
+      JWT_SECRET: jhjsdhoiwpowpeownndsllsllslssaaaaaaaaaaa
+    volumes:
+      - ./resources:/resources
+
+  # PostgresSQL Database
+  postgres_tms:
+    container_name: postgres_tms
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: tms
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+

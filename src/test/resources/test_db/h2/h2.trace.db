@@ -932,3 +932,13 @@ org.h2.jdbc.JdbcSQLNonTransientConnectionException: Database is already closed (
 	at com.intellij.rt.junit.JUnitStarter.main(JUnitStarter.java:55)
 2023-12-16 21:35:10 jdbc[3]: exception
 org.h2.jdbc.JdbcSQLNonTransientException: The object is already closed [90007-210]
+2023-12-17 00:20:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLNonTransientException: The object is already closed [90007-210]
+2023-12-17 00:43:45 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLNonTransientException: The object is already closed [90007-210]
+2023-12-17 00:50:26 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLNonTransientException: The object is already closed [90007-210]
+2023-12-17 01:14:30 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLNonTransientException: The object is already closed [90007-210]
+2023-12-17 01:21:46 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLNonTransientException: The object is already closed [90007-210]
