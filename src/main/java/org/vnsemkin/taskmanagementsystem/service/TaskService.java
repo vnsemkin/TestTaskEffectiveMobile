@@ -24,7 +24,6 @@ import org.vnsemkin.taskmanagementsystem.model.TaskRequest;
 import org.vnsemkin.taskmanagementsystem.model.TaskStatus;
 import org.vnsemkin.taskmanagementsystem.repository.TaskRepository;
 import org.vnsemkin.taskmanagementsystem.repository.UserRepository;
-import org.vnsemkin.taskmanagementsystem.service.repo.TaskRepoInterface;
 import org.vnsemkin.taskmanagementsystem.util.mappers.CommentMapper;
 import org.vnsemkin.taskmanagementsystem.util.mappers.TaskDtoToTask;
 import org.vnsemkin.taskmanagementsystem.util.mappers.TaskToTaskDto;
@@ -37,10 +36,10 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class TaskService {
-    private final TaskRepoInterface taskRepoInterface;
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
     private final TaskDtoToTask taskDtoToTask;
+    private final TaskToTaskDto taskToTaskDto;
     private final UserMapper userMapper;
     private final CommentMapper commentMapper;
 
@@ -50,25 +49,27 @@ public class TaskService {
                 PageRequest.of(taskRequest.getPage(), taskRequest.getSize());
         if (taskRequest.getAuthor().equals("author") &&
                 Objects.isNull(taskRequest.getAssignee())) {
-            return ResponseEntity.ok().body(taskRepoInterface.findAllTask(page));
+            return ResponseEntity.ok().body(taskToTaskDto
+                    .toTaskDtoPage(taskRepository.findAll(page)));
         }
 
         if (Objects.isNull(taskRequest.getAssignee())) {
             return ResponseEntity.ok()
-                    .body(TaskToTaskDto.toTaskDtoPage(taskRepoInterface
+                    .body(taskToTaskDto.toTaskDtoPage(taskRepository
                             .findAllByAuthor(getUser(taskRequest.getAuthor()), page)));
         } else {
             return ResponseEntity.ok()
-                    .body(TaskToTaskDto.toTaskDtoPage(taskRepoInterface
+                    .body(taskToTaskDto.toTaskDtoPage(taskRepository
                             .findAllByAssignee(getUser(taskRequest.getAssignee()), page)));
         }
     }
 
 
-    public ResponseEntity<TaskDto> getTaskById(Long id){
-        TaskDto taskById = taskRepoInterface.getTaskDtoById(id);
-        if (Objects.nonNull(taskById.getId())) {
-            return ResponseEntity.ok().body(taskById);
+    public ResponseEntity<TaskDto> getTaskById(Long id) {
+        Optional<Task> taskById = taskRepository.findById(id);
+        if (taskById.isPresent()) {
+            return ResponseEntity.ok().body(taskToTaskDto
+                    .toTaskDto(taskById.get()));
         } else {
             throw new AppTaskNotFoundException("Task with id: " + id + " not found.");
         }
@@ -78,8 +79,9 @@ public class TaskService {
         Task task = taskDtoToTask.toTask(taskDto);
         String authenticatedUser = getAuthenticatedUser();
         if (authenticatedUser.equals(task.getAuthor().getUsername())) {
-            TaskDto newTask = taskRepoInterface.createTask(task);
-            if (Objects.nonNull(newTask)) {
+            TaskDto newTaskDto = taskToTaskDto
+                    .toTaskDto(taskRepository.save(task));
+            if (Objects.nonNull(newTaskDto)) {
                 return ResponseEntity.ok().body("Task created");
             }
         }
@@ -89,15 +91,17 @@ public class TaskService {
 
     public ResponseEntity<String> updateTask(Long id, TaskDtoUpdate taskDtoUpdate) {
         int count;
-        Task taskById = taskRepoInterface.findTaskById(id);
-        if (Objects.isNull(taskById.getId())) {
+        Optional<Task> taskById = taskRepository.findById(id);
+        if (taskById.isEmpty()) {
             throw new AppTaskNotFoundException("Task with id: " + id + " not found.");
         }
-        if (getAuthenticatedUser().equals(taskById.getAuthor().getUsername())) {
-            count = updateTaskWithTaskDtoUpdate(taskById, taskDtoUpdate);
+        if (getAuthenticatedUser().equals(taskById
+                .get().getAuthor().getUsername())) {
+            count = updateTaskWithTaskDtoUpdate(taskById.get(), taskDtoUpdate);
         } else {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("User is not the author of " + taskById.getTaskName());
+                    .body("User is not the author of " + taskById.get()
+                            .getAuthor());
         }
         if (count == 1) {
             return ResponseEntity.ok().body("Task updated");
@@ -109,54 +113,59 @@ public class TaskService {
     }
 
     public ResponseEntity<String> deleteTask(Long id) {
-        TaskDto taskById = taskRepoInterface.getTaskDtoById(id);
-        if (Objects.isNull(taskById.getId())) {
+        Optional<Task> taskById = taskRepository.findById(id);
+        if (taskById.isEmpty()) {
             throw new AppTaskNotFoundException("Task with id: " + id + " not found.");
         }
-        if (getAuthenticatedUser().equals(taskById.getAuthor().getUsername())) {
-            taskRepoInterface.deleteTaskById(id);
+        if (getAuthenticatedUser().equals(taskById.get().getAuthor().getUsername())) {
+            taskRepository.deleteById(id);
             return ResponseEntity.ok().body("Task with id: " + id + " was deleted.");
         } else {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("User is not the author of " + taskById.getTaskName());
+                    .body("User is not the author of " + taskById.get()
+                            .getTaskName());
         }
     }
 
     public ResponseEntity<String> updateTaskStatus(Long id, TaskStatus status) {
-        TaskDto taskById;
-        taskById = taskRepoInterface.getTaskDtoById(id);
-        if (Objects.isNull(taskById.getId())) {
+        Optional<Task> taskById = taskRepository.findById(id);
+        if (taskById.isEmpty()) {
             throw new AppTaskNotFoundException("Task with id: " + id + " not found.");
         }
         String authenticatedUser = getAuthenticatedUser();
-        String author = taskById.getAuthor().getUsername();
-        String assignee = taskById.getAssignee().getUsername();
+        String author = taskById.get()
+                .getAuthor().getUsername();
+        String assignee = taskById.get()
+                .getAssignee().getUsername();
 
         if (authenticatedUser.equals(author) || authenticatedUser.equals(assignee)) {
-            Task task = taskDtoToTask.toTask(taskById);
+            Task task = taskById.get();
             task.setStatus(status);
-            taskRepoInterface.updateTask(task);
-            return ResponseEntity.ok().body("Task with id " + id + " updated");
+            return taskRepository.updateTaskStatus(id, status) > 0 ?
+                    ResponseEntity.ok().body("Task with id " + id + " updated") :
+                    ResponseEntity.ok().body("Task with id " + id + "is not updated");
         } else {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("User is not the author or assignee of " + taskById.getTaskName());
+                    .body("User is not the author or assignee of " + taskById.get()
+                            .getTaskName());
         }
     }
 
     public ResponseEntity<String> updateTaskAssignee(Long id, UserDto assignee) {
-        TaskDto taskById = taskRepoInterface.getTaskDtoById(id);
-        if (Objects.isNull(taskById.getId())) {
+        Optional<Task> taskById = taskRepository.findById(id);
+        if (taskById.isEmpty()) {
             throw new AppTaskNotFoundException("Task with id: " + id + " not found.");
         }
         if (!getAuthenticatedUser()
-                .equals(taskById.getAuthor().getUsername())) {
+                .equals(taskById.get().getAuthor().getUsername())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("User is not the author of " + taskById.getTaskName());
+                    .body("User is not the author of " + taskById.get().getTaskName());
         } else {
-            Task task = taskDtoToTask.toTask(taskById);
-            task.setAssignee(userMapper.UserDtoToUser(assignee));
-            taskRepoInterface.updateTask(task);
-            return ResponseEntity.ok().body("Task with id " + id + " updated");
+            int i = taskRepository.updateTaskAssigneeByTaskId(id,
+                    getUser(assignee.getUsername()));
+            return i > 0 ?
+                    ResponseEntity.ok().body("Task with id " + id + " updated") :
+                    ResponseEntity.ok().body("Task with id " + id + "is not updated");
         }
     }
 
@@ -170,7 +179,7 @@ public class TaskService {
         getUser(commentDto.getAuthor().getUsername());
         Comment comment = commentMapper.toComment(commentDto);
         task.addComment(comment);
-        taskRepoInterface.updateTask(task);
+        taskRepository.save(task);
         return ResponseEntity.ok().body("Comment  was added");
     }
 

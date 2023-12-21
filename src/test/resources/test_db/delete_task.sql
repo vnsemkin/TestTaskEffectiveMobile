@@ -1,3 +1,14 @@
-delete
-from tasks
-where id in (1,2);
+DELETE FROM roles;
+DELETE FROM users;
+DELETE FROM users_roles;
+DELETE FROM tasks;
+DELETE FROM comments;
+DELETE FROM tasks_comments;
+-- Reset auto-increment counter for roles table
+ALTER TABLE roles ALTER COLUMN id RESTART WITH 1;
+ALTER TABLE users ALTER COLUMN id RESTART WITH 1;
+ALTER TABLE users_roles ALTER COLUMN user_id RESTART WITH 1;
+ALTER TABLE users_roles ALTER COLUMN role_id RESTART WITH 1;
+ALTER TABLE tasks ALTER COLUMN id RESTART WITH 1;
+ALTER TABLE comments ALTER COLUMN id RESTART WITH 1;
+

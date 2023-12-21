@@ -15,7 +15,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.vnsemkin.taskmanagementsystem.configuration.constants.TMSConstants.TOKEN_URL;
 
 public class AuthControllerTests extends AbstractControllerTest {
-
     @Test
     public void shouldReturnJWT() throws Exception {
         Map<String, String> requestMap = new HashMap<>();

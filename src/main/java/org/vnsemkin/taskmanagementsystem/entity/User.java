@@ -1,5 +1,6 @@
 package org.vnsemkin.taskmanagementsystem.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -18,15 +19,18 @@ import java.util.List;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @JsonIgnore
     private Long id;
     @Column(nullable = false)
     private String username;
     @Column(nullable = false, unique = true)
     private String email;
     @Column(nullable = false, unique = true)
+    @JsonIgnore
     @Size(min = 5, max = 10,
             message = "Password must be between 5 and 10 characters")
     private String password;
+    @JsonIgnore
     @ManyToMany
     @JoinTable(
             name = "users_roles",

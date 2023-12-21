@@ -2,14 +2,16 @@ package org.vnsemkin.taskmanagementsystem.util.mappers;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.stereotype.Component;
 import org.vnsemkin.taskmanagementsystem.dto.TaskDto;
 import org.vnsemkin.taskmanagementsystem.entity.Task;
 
 import java.util.List;
 import java.util.Objects;
 
+@Component
 public class TaskToTaskDto {
-    public static TaskDto toTaskDto(Task task) {
+    public TaskDto toTaskDto(Task task) {
         if(Objects.nonNull(task)) {
             return TaskDto.builder()
                     .id(task.getId())
@@ -28,12 +30,12 @@ public class TaskToTaskDto {
         }
     }
 
-    public static Page<TaskDto> toTaskDtoPage(Page<Task> tasks) {
-        List<TaskDto> taskDtoList = tasks.stream().map(TaskToTaskDto::toTaskDto).toList();
+    public  Page<TaskDto> toTaskDtoPage(Page<Task> tasks) {
+        List<TaskDto> taskDtoList = tasks.stream().map(this::toTaskDto).toList();
         return new PageImpl<>(taskDtoList, tasks.getPageable(), tasks.getTotalElements());
     }
 
-    public static List<TaskDto> toTaskDtoList(List<Task> tasks) {
-        return tasks.stream().map(TaskToTaskDto::toTaskDto).toList();
+    public  List<TaskDto> toTaskDtoList(List<Task> tasks) {
+        return tasks.stream().map(this::toTaskDto).toList();
     }
 }

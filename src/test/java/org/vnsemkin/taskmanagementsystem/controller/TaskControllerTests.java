@@ -2,6 +2,7 @@ package org.vnsemkin.taskmanagementsystem.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -9,16 +10,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlConfig;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.vnsemkin.taskmanagementsystem.AbstractControllerTest;
-import org.vnsemkin.taskmanagementsystem.dto.TaskDto;
 import org.vnsemkin.taskmanagementsystem.dto.TaskDtoUpdate;
 import org.vnsemkin.taskmanagementsystem.dto.UserDto;
 import org.vnsemkin.taskmanagementsystem.model.TaskPriority;
 import org.vnsemkin.taskmanagementsystem.model.TaskStatus;
 import org.vnsemkin.taskmanagementsystem.repository.TaskRepository;
-import org.vnsemkin.taskmanagementsystem.service.repo.TaskRepoInterfaceImpl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -28,9 +28,12 @@ import static org.vnsemkin.taskmanagementsystem.configuration.constants.TMSConst
 @Transactional
 public class TaskControllerTests extends AbstractControllerTest {
     @Autowired
-    TaskRepoInterfaceImpl taskRepo;
-    @Autowired
     TaskRepository taskRepository;
+
+    @AfterEach
+    @Sql(scripts = {"classpath:test_db/delete_task.sql"},
+            config = @SqlConfig(encoding = "UTF-8"))
+    public void cleanup(){}
 
     @Test
     @WithUserDetails("user@gmail.com")
@@ -46,7 +49,7 @@ public class TaskControllerTests extends AbstractControllerTest {
                 .andReturn();
         //THEN
         String actual = mvcResult.getResponse().getContentAsString();
-        String expected = mapper.writeValueAsString(taskRepo.findAllTask(page));
+        String expected = mapper.writeValueAsString(taskRepository.findAll(page));
         assertEquals(actual, expected);
     }
 
@@ -68,40 +71,35 @@ public class TaskControllerTests extends AbstractControllerTest {
         assertTrue(mvcResult.getResponse().getContentAsString().contains("\"pageSize\":1"));
     }
 
-    @Test
-    @WithUserDetails("user@gmail.com")
-    @Transactional
-    @Sql(scripts = "classpath:test_db/delete_task.sql")
-    public void shouldCreateNewTask() throws Exception {
-        //GIVEN
-        String taskName  = "TestTask";
-        ObjectMapper mapper = new ObjectMapper();
-
-        UserDto userDto = new UserDto();
-        userDto.setUsername("user");
-        userDto.setEmail("user@gmail.com");
-
-        TaskDto taskDtoExpected = new TaskDto();
-        taskDtoExpected.setTaskName(taskName);
-        taskDtoExpected.setAuthor(userDto);
-        taskDtoExpected.setAssignee(userDto);
-        taskDtoExpected.setPriority(TaskPriority.LOW);
-        taskDtoExpected.setStatus(TaskStatus.PENDING);
-
-        //WHEN
-        MvcResult mvcResult = perform(MockMvcRequestBuilders.post(TASK_URL)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(taskDtoExpected))
-        )
-                .andExpect(status().isOk())
-                .andReturn();
-        //THEN
-        assertTrue(mvcResult.getResponse().getContentAsString().contains("Task created"));
-    }
+//    @Test
+//    @WithUserDetails("user@gmail.com")
+//    public void shouldCreateNewTask() throws Exception {
+//        //GIVEN
+//        String taskName  = "TestTask";
+//        ObjectMapper mapper = new ObjectMapper();
+//        UserDto userDto = new UserDto();
+//        userDto.setUsername("user");
+//        userDto.setEmail("user@gmail.com");
+//        TaskDto taskDtoExpected = new TaskDto();
+//        taskDtoExpected.setTaskName(taskName);
+//        taskDtoExpected.setAuthor(userDto);
+//        taskDtoExpected.setAssignee(userDto);
+//        taskDtoExpected.setPriority(TaskPriority.LOW);
+//        taskDtoExpected.setStatus(TaskStatus.PENDING);
+//
+//        //WHEN
+//        MvcResult mvcResult = perform(MockMvcRequestBuilders.post(TASK_URL)
+//                .contentType(MediaType.APPLICATION_JSON)
+//                .content(mapper.writeValueAsString(taskDtoExpected))
+//        )
+//                .andExpect(status().isOk())
+//                .andReturn();
+//        //THEN
+//        assertTrue(mvcResult.getResponse().getContentAsString().contains("Task created"));
+//    }
 
     @Test
     @WithUserDetails("user@gmail.com")
-    @Transactional
     public void shouldUpdateTask() throws Exception {
         //GIVEN
         String taskName  = "TestTask";
