@@ -35,9 +35,9 @@ public class Task {
     @Enumerated(EnumType.STRING)
     private TaskPriority priority;
     @NotNull
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne
     private User author;
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne
     private User assignee;
     @OneToMany(cascade = CascadeType.ALL)
     private List<Comment> comments;

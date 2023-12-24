@@ -15,7 +15,7 @@ MERGE INTO users_roles USING (
     ) AS source (user_id, role_id)
 ON users_roles.user_id = source.user_id AND users_roles.role_id = source.role_id
 WHEN NOT MATCHED THEN INSERT (user_id, role_id) VALUES (source.user_id, source.role_id);
--- ...
+
 
 
 -- Insert task from admin

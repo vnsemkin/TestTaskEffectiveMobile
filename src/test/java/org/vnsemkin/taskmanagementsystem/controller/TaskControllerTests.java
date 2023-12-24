@@ -14,6 +14,7 @@ import org.springframework.test.context.jdbc.SqlConfig;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.vnsemkin.taskmanagementsystem.AbstractControllerTest;
+import org.vnsemkin.taskmanagementsystem.dto.TaskDto;
 import org.vnsemkin.taskmanagementsystem.dto.TaskDtoUpdate;
 import org.vnsemkin.taskmanagementsystem.dto.UserDto;
 import org.vnsemkin.taskmanagementsystem.model.TaskPriority;
@@ -31,9 +32,10 @@ public class TaskControllerTests extends AbstractControllerTest {
     TaskRepository taskRepository;
 
     @AfterEach
-    @Sql(scripts = {"classpath:test_db/delete_task.sql"},
+    @Sql(scripts = {"classpath:test_db/clean_tables.sql"},
             config = @SqlConfig(encoding = "UTF-8"))
-    public void cleanup(){}
+    public void cleanup() {
+    }
 
     @Test
     @WithUserDetails("user@gmail.com")
@@ -41,7 +43,7 @@ public class TaskControllerTests extends AbstractControllerTest {
         //GIVEN
         ObjectMapper mapper = new ObjectMapper();
         Pageable page =
-                PageRequest.of(0,10);
+                PageRequest.of(0, 10);
         //WHEN
         MvcResult mvcResult = perform(MockMvcRequestBuilders.get(TASK_URL)
                 .contentType(MediaType.APPLICATION_JSON))
@@ -71,38 +73,41 @@ public class TaskControllerTests extends AbstractControllerTest {
         assertTrue(mvcResult.getResponse().getContentAsString().contains("\"pageSize\":1"));
     }
 
-//    @Test
-//    @WithUserDetails("user@gmail.com")
-//    public void shouldCreateNewTask() throws Exception {
-//        //GIVEN
-//        String taskName  = "TestTask";
-//        ObjectMapper mapper = new ObjectMapper();
-//        UserDto userDto = new UserDto();
-//        userDto.setUsername("user");
-//        userDto.setEmail("user@gmail.com");
-//        TaskDto taskDtoExpected = new TaskDto();
-//        taskDtoExpected.setTaskName(taskName);
-//        taskDtoExpected.setAuthor(userDto);
-//        taskDtoExpected.setAssignee(userDto);
-//        taskDtoExpected.setPriority(TaskPriority.LOW);
-//        taskDtoExpected.setStatus(TaskStatus.PENDING);
-//
-//        //WHEN
-//        MvcResult mvcResult = perform(MockMvcRequestBuilders.post(TASK_URL)
-//                .contentType(MediaType.APPLICATION_JSON)
-//                .content(mapper.writeValueAsString(taskDtoExpected))
-//        )
-//                .andExpect(status().isOk())
-//                .andReturn();
-//        //THEN
-//        assertTrue(mvcResult.getResponse().getContentAsString().contains("Task created"));
-//    }
+    @Test
+    @WithUserDetails("user@gmail.com")
+    @Sql(scripts = "classpath:test_db/clean_tables.sql")
+    @Sql(scripts = "classpath:test_db/creates_users.sql")
+    public void shouldCreateNewTask() throws Exception {
+        //GIVEN
+        String taskName = "TestTask";
+        ObjectMapper mapper = new ObjectMapper();
+        UserDto userDto = new UserDto();
+        userDto.setUsername("user");
+        userDto.setEmail("user@gmail.com");
+        TaskDto taskDtoExpected = new TaskDto();
+        taskDtoExpected.setTaskName(taskName);
+        taskDtoExpected.setAuthor(userDto);
+        taskDtoExpected.setAssignee(userDto);
+        taskDtoExpected.setPriority(TaskPriority.LOW);
+        taskDtoExpected.setStatus(TaskStatus.PENDING);
+        taskRepository.deleteById(1L);
+        taskRepository.deleteById(2L);
+        //WHEN
+        MvcResult mvcResult = perform(MockMvcRequestBuilders.post(TASK_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(taskDtoExpected))
+        )
+                .andExpect(status().isOk())
+                .andReturn();
+        //THEN
+        assertTrue(mvcResult.getResponse().getContentAsString().contains("Task created"));
+    }
 
     @Test
     @WithUserDetails("user@gmail.com")
     public void shouldUpdateTask() throws Exception {
         //GIVEN
-        String taskName  = "TestTask";
+        String taskName = "TestTask";
         ObjectMapper mapper = new ObjectMapper();
 
         UserDto userDto = new UserDto();
@@ -117,7 +122,7 @@ public class TaskControllerTests extends AbstractControllerTest {
         taskDtoUpdate.setStatus(TaskStatus.PENDING);
 
         //WHEN
-        MvcResult mvcResult = perform(MockMvcRequestBuilders.put(TASK_URL+"/1")
+        MvcResult mvcResult = perform(MockMvcRequestBuilders.put(TASK_URL + "/1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(taskDtoUpdate))
         )
@@ -133,13 +138,13 @@ public class TaskControllerTests extends AbstractControllerTest {
         //GIVEN
         long id = 1L;
         //WHEN
-        MvcResult mvcResult = perform(MockMvcRequestBuilders.delete(TASK_URL+"/" + id)
+        MvcResult mvcResult = perform(MockMvcRequestBuilders.delete(TASK_URL + "/" + id)
                 .contentType(MediaType.APPLICATION_JSON)
         )
                 .andExpect(status().isOk())
                 .andReturn();
         //THEN
-        assertTrue(mvcResult.getResponse().getContentAsString().contains("Task with id: " + id+" was deleted."));
+        assertTrue(mvcResult.getResponse().getContentAsString().contains("Task with id: " + id + " was deleted."));
     }
 
     @Test
@@ -149,7 +154,7 @@ public class TaskControllerTests extends AbstractControllerTest {
         long id = Long.MAX_VALUE;
         //WHEN
         MvcResult mvcResult = perform(MockMvcRequestBuilders
-                .delete(TASK_URL+"/" + id)
+                .delete(TASK_URL + "/" + id)
                 .contentType(MediaType.APPLICATION_JSON)
         )
                 .andExpect(status().isNotFound())
