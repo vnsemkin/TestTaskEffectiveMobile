@@ -9,7 +9,6 @@ public enum TaskStatus {
     COMPLETED("завершено");
 
     private final String description;
-
     TaskStatus(String description) {
         this.description = description;
     }

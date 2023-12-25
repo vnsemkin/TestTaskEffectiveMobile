@@ -9,9 +9,7 @@ public enum TaskPriority {
     LOW("низкий");
 
     private final String description;
-
     TaskPriority(String description) {
         this.description = description;
     }
-
 }
