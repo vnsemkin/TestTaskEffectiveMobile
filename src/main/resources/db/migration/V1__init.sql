@@ -1,5 +1,4 @@
 -- initial init
-
 -- Create roles table
 CREATE TABLE roles
 (

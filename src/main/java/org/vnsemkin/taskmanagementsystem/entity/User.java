@@ -27,7 +27,7 @@ public class User {
     private String email;
     @Column(nullable = false, unique = true)
     @JsonIgnore
-    @Size(min = 5, max = 10,
+    @Size(min = 5,
             message = "Password must be between 5 and 10 characters")
     private String password;
     @JsonIgnore

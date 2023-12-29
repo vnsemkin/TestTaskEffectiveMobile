@@ -75,7 +75,6 @@ public class TaskControllerTests extends AbstractControllerTest {
 
     @Test
     @WithUserDetails("user@gmail.com")
-    @Sql(scripts = "classpath:test_db/clean_tables.sql")
     @Sql(scripts = "classpath:test_db/creates_users.sql")
     public void shouldCreateNewTask() throws Exception {
         //GIVEN
