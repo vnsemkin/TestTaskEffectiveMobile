@@ -2,7 +2,6 @@ package org.vnsemkin.taskmanagementsystem.configuration.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
@@ -32,36 +31,48 @@ public class JwtTokenUtils {
         Date expiredDate = new Date(issueDate.getTime() + jwtLifetime.toMillis());
 
         return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(userDetails.getUsername())
-                .setIssuedAt(issueDate)
-                .setExpiration(expiredDate)
-                .signWith(SignatureAlgorithm.HS256, secret.getBytes())
+                .claims(claims)
+                .subject(userDetails.getUsername())
+                .issuedAt(issueDate)
+                .expiration(expiredDate)
+                .signWith(Keys.hmacShaKeyFor(secret.getBytes()))
                 .compact();
     }
 
 
     public Claims getAllClaims(String token) {
         return Jwts.parser()
-                .setSigningKey(Keys.hmacShaKeyFor(secret.getBytes()))
+                .verifyWith(Keys.hmacShaKeyFor(secret.getBytes()))
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
 
-    public String getUsername(String token){
+    public String getUsername(String token) {
         String username;
-        if(Objects.nonNull(token) && token.startsWith("Bearer ")){
+        if (Objects.nonNull(token) && token.startsWith("Bearer ")) {
             String prettyToken = token.substring(7);
             username = getAllClaims(prettyToken).getSubject();
-        }else {
-         username = getAllClaims(token).getSubject();
+        } else {
+            username = getAllClaims(token).getSubject();
         }
         return username;
     }
 
-    public List<String> getRoles(String token){
-      return getAllClaims(token).get("roles", List.class);
+    public List<String> getRoles(String token) {
+        Object rolesObject = getAllClaims(token).get("roles");
+        if (rolesObject instanceof List<?> rolesList) {
+            // Check if all elements in the list are of type String
+            if (rolesList.stream().allMatch(element -> element instanceof String)) {
+                return rolesList.stream()
+                        .map(Object::toString) // Map each element to String
+                        .collect(Collectors.toList());
+            } else {
+                throw new IllegalStateException("Roles list contains non-String elements");
+            }
+        } else {
+            throw new IllegalStateException("Roles claim is not a List");
+        }
     }
 }
